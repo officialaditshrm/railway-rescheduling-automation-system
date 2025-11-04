@@ -24,6 +24,8 @@ export const getAllTrains = async (req, res) => {
       };
     }
 
+    
+
     const total = await TrainSchedule.countDocuments(filter);
     const trains = await TrainSchedule.find(filter).skip(skip).limit(limit);
 
@@ -34,6 +36,17 @@ export const getAllTrains = async (req, res) => {
       count: trains.length,
       trains
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const getTrainByNumber = async (req, res) => {
+  try {
+    const train = await TrainSchedule.findOne({ train_number: req.params.train_number });
+    if (!train) return res.status(404).json({ message: "Train not found" });
+    res.json(train);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
