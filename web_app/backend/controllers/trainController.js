@@ -2,6 +2,8 @@ import TrainSchedule from "../models/TrainSchedule.js";
 
 // @desc    Get all train schedules (with pagination and optional date filter)
 // @route   GET /api/trains?page=1&limit=10&date=YYYY-MM-DD
+import TrainSchedule from "../models/TrainSchedule.js";
+
 export const getAllTrains = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -15,9 +17,11 @@ export const getAllTrains = async (req, res) => {
       const startOfDay = new Date(date.setHours(0, 0, 0, 0));
       const endOfDay = new Date(date.setHours(23, 59, 59, 999));
 
-      filter["schedule.scheduled_arrival"] = {
-        $gte: startOfDay,
-        $lte: endOfDay
+      // Use $elemMatch to match at least one schedule with scheduled_arrival in range
+      filter.schedule = {
+        $elemMatch: {
+          scheduled_arrival: { $gte: startOfDay, $lte: endOfDay }
+        }
       };
     }
 
@@ -36,17 +40,6 @@ export const getAllTrains = async (req, res) => {
   }
 };
 
-// @desc    Get train by train_number
-// @route   GET /api/trains/:train_number
-export const getTrainByNumber = async (req, res) => {
-  try {
-    const train = await TrainSchedule.findOne({ train_number: req.params.train_number });
-    if (!train) return res.status(404).json({ message: "Train not found" });
-    res.json(train);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
 // @desc    Add a new train schedule
 // @route   POST /api/trains
