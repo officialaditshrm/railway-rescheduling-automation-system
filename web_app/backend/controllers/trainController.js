@@ -1,15 +1,27 @@
 import TrainSchedule from "../models/TrainSchedule.js";
 
-// @desc    Get all train schedules (with pagination)
-// @route   GET /api/trains?page=1&limit=10
+// @desc    Get all train schedules (with pagination and optional date filter)
+// @route   GET /api/trains?page=1&limit=10&date=YYYY-MM-DD
 export const getAllTrains = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1; // default page 1
     const limit = parseInt(req.query.limit) || 10; // default limit 10
     const skip = (page - 1) * limit;
+    const dateFilter = req.query.date; // optional date in YYYY-MM-DD format
 
-    const total = await TrainSchedule.countDocuments();
-    const trains = await TrainSchedule.find().skip(skip).limit(limit);
+    let filter = {};
+    if (dateFilter) {
+      // Filter trains that have at least one schedule with scheduled_arrival on this date
+      const start = new Date(dateFilter + "T00:00:00.000Z");
+      const end = new Date(dateFilter + "T23:59:59.999Z");
+
+      filter = {
+        "schedule.scheduled_arrival": { $gte: start, $lte: end }
+      };
+    }
+
+    const total = await TrainSchedule.countDocuments(filter);
+    const trains = await TrainSchedule.find(filter).skip(skip).limit(limit);
 
     res.json({
       total,
