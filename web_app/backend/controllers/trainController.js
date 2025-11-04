@@ -1,11 +1,23 @@
 import TrainSchedule from "../models/TrainSchedule.js";
 
-// @desc    Get all train schedules
-// @route   GET /api/trains
+// @desc    Get all train schedules (with pagination)
+// @route   GET /api/trains?page=1&limit=10
 export const getAllTrains = async (req, res) => {
   try {
-    const trains = await TrainSchedule.find();
-    res.json(trains);
+    const page = parseInt(req.query.page) || 1; // default page 1
+    const limit = parseInt(req.query.limit) || 10; // default limit 10
+    const skip = (page - 1) * limit;
+
+    const total = await TrainSchedule.countDocuments();
+    const trains = await TrainSchedule.find().skip(skip).limit(limit);
+
+    res.json({
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      count: trains.length,
+      trains,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -30,6 +42,23 @@ export const createTrainSchedule = async (req, res) => {
     const newTrain = new TrainSchedule(req.body);
     await newTrain.save();
     res.status(201).json(newTrain);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// @desc    Update a train schedule by train_number
+// @route   PUT /api/trains/:train_number
+export const updateTrainSchedule = async (req, res) => {
+  try {
+    const updatedTrain = await TrainSchedule.findOneAndUpdate(
+      { train_number: req.params.train_number },
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTrain) return res.status(404).json({ message: "Train not found" });
+    res.json(updatedTrain);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
