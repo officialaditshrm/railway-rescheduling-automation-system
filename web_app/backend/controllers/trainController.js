@@ -2,7 +2,6 @@ import TrainSchedule from "../models/TrainSchedule.js";
 
 // @desc    Get all train schedules (with pagination and optional date filter)
 // @route   GET /api/trains?page=1&limit=10&date=YYYY-MM-DD
-import TrainSchedule from "../models/TrainSchedule.js";
 
 export const getAllTrains = async (req, res) => {
   try {
