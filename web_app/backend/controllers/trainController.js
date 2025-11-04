@@ -4,19 +4,20 @@ import TrainSchedule from "../models/TrainSchedule.js";
 // @route   GET /api/trains?page=1&limit=10&date=YYYY-MM-DD
 export const getAllTrains = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1; // default page 1
-    const limit = parseInt(req.query.limit) || 10; // default limit 10
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const dateFilter = req.query.date; // optional date in YYYY-MM-DD format
 
-    let filter = {};
-    if (dateFilter) {
-      // Filter trains that have at least one schedule with scheduled_arrival on this date
-      const start = new Date(dateFilter + "T00:00:00.000Z");
-      const end = new Date(dateFilter + "T23:59:59.999Z");
+    const filter = {};
 
-      filter = {
-        "schedule.scheduled_arrival": { $gte: start, $lte: end }
+    if (req.query.date) {
+      const date = new Date(req.query.date);
+      const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+      filter["schedule.scheduled_arrival"] = {
+        $gte: startOfDay,
+        $lte: endOfDay
       };
     }
 
@@ -28,7 +29,7 @@ export const getAllTrains = async (req, res) => {
       page,
       totalPages: Math.ceil(total / limit),
       count: trains.length,
-      trains,
+      trains
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -10,12 +10,19 @@ export default function TrainList({ onSelectTrain }) {
   const [totalPages, setTotalPages] = useState(1);
   const perPage = 10;
 
-  // Fetch trains from API with server-side pagination
+  // Fetch trains from API with server-side pagination and date filter
   const fetchTrains = async () => {
     try {
+      const queryParams = new URLSearchParams({
+        page,
+        limit: perPage,
+      });
+      if (dateFilter) queryParams.append("date", dateFilter);
+
       const res = await axios.get(
-        `https://railway-rescheduling-automation-system.onrender.com/api/trains?page=${page}&limit=${perPage}`
+        `https://railway-rescheduling-automation-system.onrender.com/api/trains?${queryParams.toString()}`
       );
+
       setTrains(res.data.trains || []);
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {
@@ -23,38 +30,27 @@ export default function TrainList({ onSelectTrain }) {
     }
   };
 
+  // Fetch trains whenever page or date changes
   useEffect(() => {
     fetchTrains();
-  }, [page]);
+  }, [page, dateFilter]);
 
-  // Reset page if search or date changes
+  // Reset page if search term changes
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, dateFilter]);
+  }, [searchTerm]);
 
   const filteredTrains = trains.filter((train) => {
     const term = searchTerm.toLowerCase();
-
-    const matchesText =
+    return (
       train.train_name.toLowerCase().includes(term) ||
       train.train_number.toString().includes(term) ||
       train.schedule?.some(
         (s) =>
           s.station_name.toLowerCase().includes(term) ||
           s.station_code.toLowerCase().includes(term)
-      );
-
-    const matchesDate = dateFilter
-      ? train.schedule?.some((s) => {
-          if (!s.scheduled_arrival) return false;
-          const arrivalDate = new Date(s.scheduled_arrival)
-            .toISOString()
-            .split("T")[0];
-          return arrivalDate === dateFilter;
-        })
-      : true;
-
-    return matchesText && matchesDate;
+      )
+    );
   });
 
   return (
